@@ -280,10 +280,15 @@ func MachineToInstanceSpec(machine *machinev1beta1.Machine, apiVIP, ingressVIP, 
 
 	// The order of the networks is important, first network is the one that will be used for kubelet when
 	// the legacy cloud provider is used. Once we switch to using CCM by default, the order won't matter.
-	for _, network := range ps.Networks {
+	for i, network := range ps.Networks {
 		ports, err := networkParamToCapov1PortOpt(&network, apiVIP, ingressVIP, &ps.Trunk, networkService, ignoreAddressPairs)
 		if err != nil {
 			return nil, err
+		}
+		if i == 0 {
+			for _, port := range ports {
+				port.Tags = append(port.Tags, "control-plane-interface")
+			}
 		}
 		instanceSpec.Ports = append(instanceSpec.Ports, ports...)
 	}
