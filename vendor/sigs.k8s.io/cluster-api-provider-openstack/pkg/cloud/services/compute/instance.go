@@ -183,8 +183,15 @@ func (s *Service) createInstanceImpl(eventObject runtime.Object, openStackCluste
 			}
 		}
 
+		tag := ""
+		// Tag the Primary network in the cluster
+		if i == 0 {
+			tag = "control-plane-interface"
+		}
+
 		portList = append(portList, servers.Network{
 			Port: port.ID,
+			Tag:  tag,
 		})
 	}
 
