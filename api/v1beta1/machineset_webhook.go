@@ -24,6 +24,7 @@ import (
 	"github.com/openshift/api/machine/v1beta1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/cluster-api/util/topology"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -44,10 +45,12 @@ var _ webhook.CustomValidator = &MachineSetWebhook{}
 
 // ValidateCreate implements webhook.CustomValidator so a webhook will be registered for the type.
 func (r *MachineSetWebhook) ValidateCreate(ctx context.Context, obj runtime.Object) error {
+	klog.Infof("Validating MachineSet create operation")
 	return nil
 }
 
 func (r *MachineSetWebhook) ValidateUpdate(ctx context.Context, oldRaw runtime.Object, newRaw runtime.Object) error {
+	klog.Infof("Validating MachineSet update operation")
 	oldObj, ok := oldRaw.(*v1beta1.MachineSet)
 	if !ok {
 		return apierrors.NewBadRequest(fmt.Sprintf("expected an MachineSet but got a %T", oldRaw))
@@ -71,5 +74,6 @@ func (r *MachineSetWebhook) ValidateUpdate(ctx context.Context, oldRaw runtime.O
 }
 
 func (r *MachineSetWebhook) ValidateDelete(ctx context.Context, obj runtime.Object) error {
+	klog.Infof("Validating MachineSet delete operation")
 	return nil
 }

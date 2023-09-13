@@ -112,6 +112,8 @@ func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
 
+	klog.Infof("Starting custom version of MAPO!")
+
 	if *showVersion {
 		fmt.Println(version.Get())
 		fmt.Println(version.Get().GitCommit)
