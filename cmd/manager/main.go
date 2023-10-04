@@ -46,6 +46,8 @@ import (
 
 // The default durations for the leader election operations.
 var (
+	setupLog      = ctrl.Log.WithName("setup")
+
 	leaseDuration = 120 * time.Second
 	renewDeadline = 110 * time.Second
 	retryPeriod   = 20 * time.Second
@@ -162,22 +164,9 @@ func main() {
 
 	// Setup OpenStack MachineSet controller
 	ctrl.SetLogger(klogr.New())
-	setupLog := ctrl.Log.WithName("setup")
-	if err = (&machineset.Reconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("MachineSet"),
-	}).SetupWithManager(mgr, rTcontroller.Options{}); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "MachineSet")
-		os.Exit(1)
-	}
 
-	if err := mgr.AddReadyzCheck("ping", healthz.Ping); err != nil {
-		klog.Fatal(err)
-	}
-
-	if err := mgr.AddHealthzCheck("ping", healthz.Ping); err != nil {
-		klog.Fatal(err)
-	}
+	setupReconcilers(mgr)
+	setupChecks(mgr)
 
 	log.Printf("Starting the Cmd.")
 
@@ -204,5 +193,25 @@ func getActuatorParams(mgr manager.Manager) machine.ActuatorParams {
 		Scheme:        mgr.GetScheme(),
 		EventRecorder: mgr.GetEventRecorderFor("openstack_controller"),
 	}
+}
 
+
+func setupChecks(mgr manager.Manager) {
+	if err := mgr.AddReadyzCheck("ping", healthz.Ping); err != nil {
+		klog.Fatal(err)
+	}
+
+	if err := mgr.AddHealthzCheck("ping", healthz.Ping); err != nil {
+		klog.Fatal(err)
+	}
+}
+
+func setupReconcilers(mgr manager.Manager) {
+	if err := (&machineset.Reconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("MachineSet"),
+	}).SetupWithManager(mgr, rTcontroller.Options{}); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "MachineSet")
+		os.Exit(1)
+	}
 }
