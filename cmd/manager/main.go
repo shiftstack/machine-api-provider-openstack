@@ -40,7 +40,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	rTcontroller "sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -212,12 +211,14 @@ func getActuatorParams(mgr manager.Manager) machine.ActuatorParams {
 
 
 func setupChecks(mgr manager.Manager) {
-	if err := mgr.AddReadyzCheck("ping", healthz.Ping); err != nil {
-		klog.Fatal(err)
+	if err := mgr.AddReadyzCheck("ping", mgr.GetWebhookServer().StartedChecker()); err != nil {
+		setupLog.Error(err, "unable to create ready check")
+		os.Exit(1)
 	}
 
-	if err := mgr.AddHealthzCheck("ping", healthz.Ping); err != nil {
-		klog.Fatal(err)
+	if err := mgr.AddHealthzCheck("ping", mgr.GetWebhookServer().StartedChecker()); err != nil {
+		setupLog.Error(err, "unable to create health check")
+		os.Exit(1)
 	}
 }
 
