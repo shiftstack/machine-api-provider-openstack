@@ -23,6 +23,7 @@ import (
 	"os"
 	"time"
 
+	infrav1 "github.com/openshift/machine-api-provider-openstack/api/v1beta1"
 	"github.com/openshift/machine-api-provider-openstack/pkg/machine"
 	"github.com/openshift/machine-api-provider-openstack/pkg/machineset"
 	"github.com/openshift/machine-api-provider-openstack/version"
@@ -92,6 +93,17 @@ func main() {
 		"Address for hosting metrics",
 	)
 
+	webhookPort := flag.Int(
+		"webhook-port",
+		9443,
+		"Webhook Server Port",
+	)
+	webhookCertDir := flag.String(
+		"webhook-cert-dir",
+		"/etc/machine-api-operator/tls",
+		"Webhook cert dir. Only used when webhook-port is specified.",
+	)
+
 	showVersion := flag.Bool(
 		"version",
 		false,
@@ -125,6 +137,8 @@ func main() {
 		RetryPeriod:   &retryPeriod,
 		RenewDeadline: &renewDeadline,
 		SyncPeriod:    &syncPeriod,
+		Port:          *webhookPort,
+		CertDir:       *webhookCertDir,
 	}
 	if *watchNamespace != "" {
 		opts.Namespace = *watchNamespace
@@ -167,6 +181,7 @@ func main() {
 
 	setupReconcilers(mgr)
 	setupChecks(mgr)
+	setupWebhooks(mgr)
 
 	log.Printf("Starting the Cmd.")
 
@@ -212,6 +227,13 @@ func setupReconcilers(mgr manager.Manager) {
 		Log:    ctrl.Log.WithName("controllers").WithName("MachineSet"),
 	}).SetupWithManager(mgr, rTcontroller.Options{}); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MachineSet")
+		os.Exit(1)
+	}
+}
+
+func setupWebhooks(mgr manager.Manager) {
+	if err := (&infrav1.MachineSetWebhook{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "MachineSet")
 		os.Exit(1)
 	}
 }
